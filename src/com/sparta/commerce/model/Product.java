@@ -1,4 +1,4 @@
-package com.sparta.commerce.data;
+package com.sparta.commerce.model;
 
 import java.util.Objects;
 
