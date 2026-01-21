@@ -36,10 +36,10 @@ public class ProductRepository {
         categories.add(new Category(
                 CategoryType.CLOTHING.getName(),
                 List.of(
-                        new Product("후드 티셔츠", 59000, "편안한 오버핏 면 후드", 50),
-                        new Product("슬랙스 팬츠", 45000, "격식 있는 자리에 어울리는 바지", 40),
-                        new Product("롱 패딩", 299000, "겨울철 필수 방한 아우터", 10),
-                        new Product("캡 모자", 25000, "심플한 디자인의 볼캡", 100)
+                        new Product("후드 티셔츠", 59000, "편안한 오버핏 면 후드", 40000),
+                        new Product("슬랙스 팬츠", 45000, "격식 있는 자리에 어울리는 바지", 3000),
+                        new Product("롱 패딩", 299000, "겨울철 필수 방한 아우터", 2900),
+                        new Product("캡 모자", 25000, "심플한 디자인의 볼캡", 100000)
                 )
         ));
 

@@ -12,6 +12,7 @@ public enum CategoryType {
 
     private final int menuNum;
     private final String name;
+
     CategoryType(final int menuNum, final String name) {
         this.menuNum = menuNum;
         this.name = name;

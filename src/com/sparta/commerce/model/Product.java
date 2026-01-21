@@ -4,10 +4,10 @@ import java.util.Objects;
 
 // 상품명, 가격, 설명, 재고수량
 public class Product {
-    String name;
-    int price;
-    String description;
-    int quantity;
+    private String name;
+    private int price;
+    private String description;
+    private int quantity;
 
     public String getName() {
         return name;
