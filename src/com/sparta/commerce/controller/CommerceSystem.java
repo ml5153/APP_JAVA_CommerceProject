@@ -17,8 +17,6 @@ public class CommerceSystem {
     private Product selectedProduct;
 
     public void start() {
-        Scanner scanner = new Scanner(System.in);
-        String menu;
         categories = ProductRepository.getCategories();
 
         while (!isFinish) {
@@ -26,9 +24,7 @@ public class CommerceSystem {
             renderScreen();
 
             // 입력
-            System.out.print("입력 > ");
-            menu = scanner.nextLine();
-            handleMenu(menu);
+            handleMenu();
         }
         System.out.println("\n커머스 플랫폼을 종료합니다.");
     }
@@ -54,10 +50,8 @@ public class CommerceSystem {
 
     /**
      * 입력 메서드 (입력한 값의 상태륿 바꿔줌)
-     *
-     * @param menu : 입력한 메뉴값
      */
-    private void handleMenu(String menu) {
+    private void handleMenu() {
         try {
             // 상세화면 처리
             if (selectedProduct != null) {
@@ -66,6 +60,9 @@ public class CommerceSystem {
             }
 
             // 입력값 0일 때 처리
+            Scanner scanner = new Scanner(System.in);
+            System.out.print("입력 > ");
+            String menu = scanner.nextLine();
             int inputNumber = Integer.parseInt(menu);
             if (inputNumber == 0) {
                 if (currentCategory != CategoryType.MAIN) {
@@ -141,6 +138,7 @@ public class CommerceSystem {
                         selectedProduct.getDescription(),
                         selectedProduct.getQuantity()
                 ));
+        new Scanner(System.in).nextLine();
     }
 
 
