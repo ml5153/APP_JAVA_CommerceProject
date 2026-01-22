@@ -16,10 +16,6 @@ public class ProductRepository {
      * 하지만 LinkedHashMap이 좀더 적당하지 않을까라는 생각이들었다. 찾아봤을 때 메모리점유율은 높지만 데이터가 얼마되지 않을때는
      * 직관적이고 조회도 빠르고 순서도 보장하니 더 최선의 선택이지 않을까 싶다.
      */
-
-    /**
-     * 상품을 주문 시에 재고를 차감해야하기때문에 불변의 List.of() 가 아닌 Arrays.asList()를 사용해야한다.
-     */
     //    private static final Map<CategoryType, List<Product>> categoryProduct = new LinkedHashMap<>();
     private static final List<Category> categories = new ArrayList<>();
 
@@ -29,6 +25,10 @@ public class ProductRepository {
 
 
     static {
+        /**
+         * 상품을 주문 시에 재고를 차감해야하기때문에 불변의 List.of() 가 아닌 Arrays.asList()를 사용해야한다.
+         */
+
         categories.add(
                 new Category(
                         CategoryType.ELECTRONICS.getName(),

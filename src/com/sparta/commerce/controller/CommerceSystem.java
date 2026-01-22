@@ -2,8 +2,10 @@ package com.sparta.commerce.controller;
 
 import com.sparta.commerce.model.CartItem;
 import com.sparta.commerce.model.Category;
+import com.sparta.commerce.model.Customer;
 import com.sparta.commerce.model.Product;
 import com.sparta.commerce.model.type.CategoryType;
+import com.sparta.commerce.model.type.UserLevel;
 import com.sparta.commerce.model.type.ViewMode;
 import com.sparta.commerce.repository.ProductRepository;
 
@@ -13,13 +15,14 @@ import java.util.Objects;
 import java.util.Scanner;
 
 public class CommerceSystem {
+    // 고객은 1명밖에 없는 것이라고 전제!!
+    private Customer customer = null;
     private List<Category> categories = new ArrayList<>();
     private Product selectedProduct = null;
     private final List<CartItem> cartItems = new ArrayList<>();
 
     private CategoryType currentCategory = CategoryType.MAIN;
     private ViewMode currentViewMode = ViewMode.MAIN;
-
 
     private final Scanner scanner = new Scanner(System.in);
     private boolean isFinish = false;
@@ -46,7 +49,7 @@ public class CommerceSystem {
             // 출력
             renderScreen();
             // 입력
-            handleMenu();
+            handleMenu();   // 화면의 타입 : main -> List -> LIst_DEtail
         }
         System.out.println("\n커머스 플랫폼을 종료합니다.");
     }
@@ -61,6 +64,7 @@ public class CommerceSystem {
             case LIST -> landingProductList();
             case LIST_DETAIL -> landingProductDetail();
             case CART -> landingCart();
+            case CUSTOMER -> landingCustomer();
             default -> System.out.println("잘못된 입력입니다.");
         }
     }
@@ -70,25 +74,28 @@ public class CommerceSystem {
      * 입력 메서드 (입력한 값의 상태륿 바꿔줌)
      */
     private void handleMenu() {
-        try {
-            System.out.print("입력 > ");
-            String input = scanner.nextLine();
-            int inputNumber = Integer.parseInt(input);
+        System.out.print("입력 > ");
+        String input = scanner.nextLine();
 
-            // 각 화면마다 처리
-            switch (currentViewMode) {
-                case MAIN -> handleMainInput(inputNumber);
-                case LIST -> handleListInput(inputNumber);
-                case LIST_DETAIL -> handleListDetailInput(inputNumber);
-                case CART -> handleCart(inputNumber);
-            }
-        } catch (NumberFormatException e) {
-            System.out.println("번호만 입력 가능합니다.");
+        // 각 화면마다 처리
+        switch (currentViewMode) {
+            case MAIN -> handleMain(input);
+            case LIST -> handleList(input);
+            case LIST_DETAIL -> handleListDetail(input);
+            case CART -> handleCart(input);
+            case CUSTOMER -> handleCustomer(input);
         }
     }
 
-
     private void landingMainMenu() {
+        if (customer != null) {
+            System.out.println("""
+                    
+                    =========================
+                    [ 고객: %s | %s | %s | %,d원 ]
+                    =========================
+                    """.formatted(customer.getName(), customer.getMail(), customer.getLevel().toString(), customer.getOrderAmount()));
+        }
         System.out.println("[ 실시간 커머스 플랫폼 - %s ]".formatted(currentCategory.getName()));
         for (int i = 0; i < categories.size(); i++) {
             Category c = categories.get(i);
@@ -162,110 +169,178 @@ public class CommerceSystem {
         }
         System.out.println("=========================");
 
-        int totalPrice = cartItems.stream()
-                .mapToInt(CartItem::getTotalPrice)
+        int orderAmount = cartItems.stream()
+                .mapToInt(CartItem::getOrderAmount)
                 .sum();
-        System.out.println("""
-                
+        System.out.println("""               
                 [ 총 주문 금액 ]
-                %,d원               
-                1. 주문 확정      0. 뒤로가기
-                """.formatted(totalPrice));
+                %,d원
+                
+                1. 주문 하기      2. 메인으로 돌아가기
+                """.formatted(orderAmount));
 
     }
 
-    private void handleMainInput(final int inputNum) {
-        // 종료하기
-        if (inputNum == 0) {
-            isFinish = true;
-            return;
-        }
-
-        // 장바구니 확인
-        if (inputNum == 4) {
-            currentViewMode = ViewMode.CART;
-            return;
-        }
-
-        if (inputNum == 5) {
-            currentViewMode = ViewMode.MAIN;
-            System.out.println("주문이 취소되었습니다.\n\n");
-            cartItems.clear();
-            return;
-        }
-
-        // 카테고리
-        CategoryType.fromMenuNum(inputNum)
-                .ifPresent(type -> {
-                    currentCategory = type;
-                    currentViewMode = ViewMode.LIST;
-                });
+    private void landingCustomer() {
+        System.out.println("\n고객 이메일을 입력해주세요.");
     }
 
-    private void handleListInput(final int inputNum) {
-        if (inputNum == 0) {
-            currentViewMode = ViewMode.MAIN;
-            return;
-        }
-
-        categories.stream()
-                .filter(category -> Objects.equals(category.getName(), currentCategory.getName()))
-                .findFirst()
-                .ifPresent(category -> {
-                    List<Product> products = category.getProducts();
-                    if (inputNum <= products.size()) {
-                        CommerceSystem.this.selectedProduct = products.get(inputNum - 1);
-                        CommerceSystem.this.currentViewMode = ViewMode.LIST_DETAIL;
-                    } else {
-                        System.out.println("\n해당하는 상품 번호가 없습니다.\n다시 입력해주세요!!!!! \n");
-                    }
-                });
-
-    }
-
-    private void handleListDetailInput(final int inputNum) {
-        boolean isRunning = true;
-        while (isRunning) {
-            if (inputNum == 0 || inputNum == 2) {
-                selectedProduct = null;
-                currentViewMode = ViewMode.LIST;
+    private void handleMain(final String input) {
+        try {
+            int inputNum = Integer.parseInt(input);
+            // 종료하기
+            if (inputNum == 0) {
+                isFinish = true;
                 return;
             }
 
-            if (inputNum == 1) {
-                try {
-                    System.out.print("담을 수량을 입력해 주세요: ");
-                    int quantity = Integer.parseInt(scanner.nextLine());
-                    if (quantity <= selectedProduct.getQuantity()) {
-                        cartItems.add(new CartItem(selectedProduct, quantity));
-                        System.out.println("%s가 %d개 장바구니에 추가되었습니다.".formatted(selectedProduct.getName(), quantity));
-                        goToHome();
-                    } else {
-                        System.out.println("재고가 부족합니다.!!");
-                    }
-                    isRunning = false;
-                } catch (NumberFormatException e) {
-                    System.out.println("개수만 입력 가능합니다.");
-                }
+            // 장바구니 확인
+            if (inputNum == 4) {
+                currentViewMode = ViewMode.CART;
+                return;
             }
+
+            if (inputNum == 5) {
+                currentViewMode = ViewMode.MAIN;
+                System.out.println("주문이 취소되었습니다.\n\n");
+                cartItems.clear();
+                return;
+            }
+
+            // 카테고리
+            CategoryType.fromMenuNum(inputNum)
+                    .ifPresent(type -> {
+                        currentCategory = type;
+                        currentViewMode = ViewMode.LIST;
+                    });
+        } catch (NumberFormatException e) {
+            System.out.println("번호만 입력 가능합니다.");
         }
     }
 
-    private void handleCart(final int inputNum) {
-        int totalPrice = cartItems.stream()
-                .mapToInt(CartItem::getTotalPrice)
-                .sum();
+    private void handleList(final String input) {
+        try {
+            int inputNum = Integer.parseInt(input);
+            if (inputNum == 0) {
+                currentViewMode = ViewMode.MAIN;
+                return;
+            }
 
-        if (inputNum == 1) {
-            System.out.println("주문이 완료되었습니다! 총 금액: %,d원\n\n".formatted(totalPrice));
-            for (CartItem item : cartItems) {
-                int orderQuantity = item.getQuantity();
-                int originQuantity = item.getProduct().getQuantity();
-                item.getProduct().setQuantity(originQuantity - orderQuantity);
+            categories.stream()
+                    .filter(category -> Objects.equals(category.getName(), currentCategory.getName()))
+                    .findFirst()
+                    .ifPresent(category -> {
+                        List<Product> products = category.getProducts();
+                        if (inputNum <= products.size()) {
+                            CommerceSystem.this.selectedProduct = products.get(inputNum - 1);
+                            CommerceSystem.this.currentViewMode = ViewMode.LIST_DETAIL;
+                        } else {
+                            System.out.println("\n해당하는 상품 번호가 없습니다.\n다시 입력해주세요!!!!! \n");
+                        }
+                    });
+        } catch (NumberFormatException e) {
+            System.out.println("번호만 입력 가능합니다.");
+        }
+
+    }
+
+    private void handleListDetail(final String input) {
+        try {
+            int inputNum = Integer.parseInt(input);
+            boolean isRunning = true;
+            while (isRunning) {
+                if (inputNum == 0 || inputNum == 2) {
+                    selectedProduct = null;
+                    currentViewMode = ViewMode.LIST;
+                    return;
+                }
+
+                if (inputNum == 1) {
+                    try {
+                        System.out.print("담을 수량을 입력해 주세요: ");
+                        int quantity = Integer.parseInt(scanner.nextLine());
+                        if (quantity <= selectedProduct.getQuantity()) {
+                            cartItems.add(new CartItem(selectedProduct, quantity));
+                            System.out.println("%s가 %d개 장바구니에 추가되었습니다.".formatted(selectedProduct.getName(), quantity));
+                            goToHome();
+                        } else {
+                            System.out.println("재고가 부족합니다.!!");
+                        }
+                        isRunning = false;
+                    } catch (NumberFormatException e) {
+                        System.out.println("개수만 입력 가능합니다.");
+                    }
+                } else {
+                    return;
+                }
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("번호만 입력 가능합니다.");
+        }
+    }
+
+    private void handleCart(final String input) {
+        int inputNum = Integer.parseInt(input);
+        try {
+            if (inputNum == 1) {
+                currentViewMode = ViewMode.CUSTOMER;
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("번호만 입력 가능합니다.");
+        }
+    }
+
+    private void handleCustomer(final String input) {
+        int totalAmount = cartItems.stream()
+                .mapToInt(CartItem::getOrderAmount)
+                .sum();
+        int previousAmount = (customer != null) ? customer.getOrderAmount() : 0;
+        int totalAccumulatedAmount = previousAmount + totalAmount;
+
+        UserLevel level = getUserLevel(totalAccumulatedAmount);
+        int discountAmount = totalAccumulatedAmount * level.getDiscountRate() / 100;
+        int finalPrice = totalAccumulatedAmount - discountAmount;
+
+        System.out.println("""
+                
+                해당 유저는 %s 등급 이므로 %d%% 할인이 적용됩니다.
+                할인 전 금액: %,d원
+                할인 금액: -%,d원
+                최종 결제 금액: %,d원
+                
+                주문 하시겠습니까?
+                1. 주문 확정  2. 메인으로 돌아가기
+                """.formatted(level.name(), level.getDiscountRate(), totalAccumulatedAmount, discountAmount, finalPrice));
+
+        System.out.print("입력 > ");
+        String finalChoice = scanner.nextLine();
+
+        if ("1".equals(finalChoice)) {
+            System.out.println("\n주문이 완료되었습니다!");
+            customer = new Customer("박영수", input, level, totalAccumulatedAmount);
+            System.out.println("최종 결제 금액: %,d원".formatted(finalPrice));
+
+            for (CartItem cart : cartItems) {
+                Product p = cart.getProduct();
+                int orderQuantity = cart.getQuantity();
+                int originQuantity = p.getQuantity();
+                p.setQuantity(originQuantity - orderQuantity);
+                System.out.println("%s 재고가 %d -> %d개로 업데이트되었습니다."
+                        .formatted(p.getName(), originQuantity, p.getQuantity()));
             }
             cartItems.clear();
         }
         goToHome();
+
     }
+
+
+    private UserLevel getUserLevel(int totalAmount) {
+        if (totalAmount >= 2_000_000) return UserLevel.PLATINUM;
+        if (totalAmount >= 1_000_000) return UserLevel.GOLD;
+        if (totalAmount >= 500_000) return UserLevel.SILVER;
+        return UserLevel.BRONZE;
+    }
+
 
 }

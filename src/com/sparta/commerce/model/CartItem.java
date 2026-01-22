@@ -28,7 +28,7 @@ public class CartItem {
         this.quantity = quantity;
     }
 
-    public int getTotalPrice(){
+    public int getOrderAmount(){
         return product.getPrice() * quantity;
     }
 
