@@ -5,6 +5,7 @@ import com.sparta.commerce.model.Category;
 import com.sparta.commerce.model.Customer;
 import com.sparta.commerce.model.Product;
 import com.sparta.commerce.model.type.CategoryType;
+import com.sparta.commerce.model.type.PriceFilter;
 import com.sparta.commerce.model.type.UserLevel;
 import com.sparta.commerce.model.type.ViewMode;
 import com.sparta.commerce.repository.ProductRepository;
@@ -23,6 +24,7 @@ public class CommerceSystem {
 
     private CategoryType currentCategory = CategoryType.MAIN;
     private ViewMode currentViewMode = ViewMode.MAIN;
+    private PriceFilter currentPriceFilter = null;
 
     private final Scanner scanner = new Scanner(System.in);
     private boolean isFinish = false;
@@ -60,11 +62,11 @@ public class CommerceSystem {
      */
     private void renderScreen() {
         switch (currentViewMode) {
-            case MAIN -> landingMainMenu();
-            case LIST -> landingProductList();
-            case LIST_DETAIL -> landingProductDetail();
-            case CART -> landingCart();
-            case CUSTOMER -> landingCustomer();
+            case MAIN -> renderMainMenu();
+            case PRODUCT_LIST -> renderProductList();
+            case PRODUCT_DETAIL -> renderProductDetail();
+            case CART -> renderCart();
+            case CUSTOMER -> renderCustomer();
             default -> System.out.println("잘못된 입력입니다.");
         }
     }
@@ -80,14 +82,14 @@ public class CommerceSystem {
         // 각 화면마다 처리
         switch (currentViewMode) {
             case MAIN -> handleMain(input);
-            case LIST -> handleList(input);
-            case LIST_DETAIL -> handleListDetail(input);
+            case PRODUCT_LIST -> handleList(input);
+            case PRODUCT_DETAIL -> handleListDetail(input);
             case CART -> handleCart(input);
             case CUSTOMER -> handleCustomer(input);
         }
     }
 
-    private void landingMainMenu() {
+    private void renderMainMenu() {
         if (customer != null) {
             System.out.println("""
                     
@@ -114,7 +116,7 @@ public class CommerceSystem {
         }
     }
 
-    private void landingProductList() {
+    private void renderProductList() {
         System.out.println("[ %s 카테고리 ]".formatted(currentCategory.getName()));
         for (Category category : categories) {
             if (Objects.equals(category.getName(), currentCategory.getName())) {
@@ -129,7 +131,7 @@ public class CommerceSystem {
         System.out.println("0. 뒤로가기");
     }
 
-    private void landingProductDetail() {
+    private void renderProductDetail() {
         System.out.println("""
                 
                 상품 상세 정보를 조회합니다.
@@ -152,7 +154,7 @@ public class CommerceSystem {
                 ));
     }
 
-    private void landingCart() {
+    private void renderCart() {
         if (cartItems.isEmpty()) {
             System.out.println("장바구니가 비어있습니다.");
             return;
@@ -181,7 +183,7 @@ public class CommerceSystem {
 
     }
 
-    private void landingCustomer() {
+    private void renderCustomer() {
         System.out.println("\n고객 이메일을 입력해주세요.");
     }
 
@@ -211,7 +213,7 @@ public class CommerceSystem {
             CategoryType.fromMenuNum(inputNum)
                     .ifPresent(type -> {
                         currentCategory = type;
-                        currentViewMode = ViewMode.LIST;
+                        currentViewMode = ViewMode.PRODUCT_LIST;
                     });
         } catch (NumberFormatException e) {
             System.out.println("번호만 입력 가능합니다.");
@@ -233,7 +235,7 @@ public class CommerceSystem {
                         List<Product> products = category.getProducts();
                         if (inputNum <= products.size()) {
                             CommerceSystem.this.selectedProduct = products.get(inputNum - 1);
-                            CommerceSystem.this.currentViewMode = ViewMode.LIST_DETAIL;
+                            CommerceSystem.this.currentViewMode = ViewMode.PRODUCT_DETAIL;
                         } else {
                             System.out.println("\n해당하는 상품 번호가 없습니다.\n다시 입력해주세요!!!!! \n");
                         }
@@ -251,7 +253,7 @@ public class CommerceSystem {
             while (isRunning) {
                 if (inputNum == 0 || inputNum == 2) {
                     selectedProduct = null;
-                    currentViewMode = ViewMode.LIST;
+                    currentViewMode = ViewMode.PRODUCT_LIST;
                     return;
                 }
 
