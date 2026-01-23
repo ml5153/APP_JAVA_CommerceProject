@@ -51,7 +51,7 @@ public class CommerceSystem {
             // 출력
             renderScreen();
             // 입력
-            handleMenu();   // 화면의 타입 : main -> List -> LIst_DEtail
+            handleMenu();
         }
         System.out.println("\n커머스 플랫폼을 종료합니다.");
     }
@@ -63,6 +63,7 @@ public class CommerceSystem {
     private void renderScreen() {
         switch (currentViewMode) {
             case MAIN -> renderMainMenu();
+            case CATEGORY_FILTER -> renderCategoryFilter();
             case PRODUCT_LIST -> renderProductList();
             case PRODUCT_DETAIL -> renderProductDetail();
             case CART -> renderCart();
@@ -82,12 +83,14 @@ public class CommerceSystem {
         // 각 화면마다 처리
         switch (currentViewMode) {
             case MAIN -> handleMain(input);
+            case CATEGORY_FILTER -> handleCategoryFilter(input);
             case PRODUCT_LIST -> handleList(input);
             case PRODUCT_DETAIL -> handleListDetail(input);
             case CART -> handleCart(input);
             case CUSTOMER -> handleCustomer(input);
         }
     }
+
 
     private void renderMainMenu() {
         if (customer != null) {
@@ -116,18 +119,37 @@ public class CommerceSystem {
         }
     }
 
+    private void renderCategoryFilter() {
+        System.out.println("""
+                
+                [ %s - 필터 선택 ]
+                1. 전체 상품 보기
+                2. 가격대별 필터링 (100만원 이하)
+                3. 가격대별 필터링 (100만원 초과)
+                0. 뒤로가기
+                """.formatted(currentCategory.getName()));
+    }
+
     private void renderProductList() {
         System.out.println("[ %s 카테고리 ]".formatted(currentCategory.getName()));
-        for (Category category : categories) {
-            if (Objects.equals(category.getName(), currentCategory.getName())) {
-                for (int i = 0; i < category.getProducts().size(); i++) {
-                    Product product = category.getProducts().get(i);
-                    System.out.println("%d. %-15s | %,10d원 | %10s | %,d개"
-                            .formatted(i + 1, product.getName(), product.getPrice(), product.getDescription(), product.getQuantity())
-                    );
-                }
-            }
-        }
+        categories.stream()
+                .filter(c -> Objects.equals(c.getName(), currentCategory.getName()))
+                .findFirst()
+                .ifPresent(category -> {
+                    List<Product> filtered = category.getProducts().stream()
+                            .filter(p -> currentPriceFilter.isMatch(p.getPrice()))
+                            .toList();
+
+                    if (filtered.isEmpty()) {
+                        System.out.println("조회된 상품이 없습니다.");
+                    } else {
+                        for (int i = 0; i < filtered.size(); i++) {
+                            Product p = filtered.get(i);
+                            System.out.println("%d. %-15s | %,10d원 | %s"
+                                    .formatted(i + 1, p.getName(), p.getPrice(), p.getDescription()));
+                        }
+                    }
+                });
         System.out.println("0. 뒤로가기");
     }
 
@@ -213,8 +235,32 @@ public class CommerceSystem {
             CategoryType.fromMenuNum(inputNum)
                     .ifPresent(type -> {
                         currentCategory = type;
-                        currentViewMode = ViewMode.PRODUCT_LIST;
+                        currentViewMode = ViewMode.CATEGORY_FILTER;
                     });
+        } catch (NumberFormatException e) {
+            System.out.println("번호만 입력 가능합니다.");
+        }
+    }
+
+    private void handleCategoryFilter(String input) {
+        try {
+            int inputNum = Integer.parseInt(input);
+            if (inputNum == 0) {
+                currentViewMode = ViewMode.MAIN;
+                return;
+            }
+
+            switch (inputNum) {
+                case 1 -> currentPriceFilter = PriceFilter.ALL;
+                case 2 -> currentPriceFilter = PriceFilter.UNDER_100;
+                case 3 -> currentPriceFilter = PriceFilter.OVER_100;
+                default -> {
+                    System.out.println("잘못된 번호입니다.");
+                    return;
+                }
+            }
+            currentViewMode = ViewMode.PRODUCT_LIST;
+
         } catch (NumberFormatException e) {
             System.out.println("번호만 입력 가능합니다.");
         }
@@ -224,7 +270,7 @@ public class CommerceSystem {
         try {
             int inputNum = Integer.parseInt(input);
             if (inputNum == 0) {
-                currentViewMode = ViewMode.MAIN;
+                currentViewMode = ViewMode.CATEGORY_FILTER;
                 return;
             }
 
